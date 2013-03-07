@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # Flora_Pac by @leaskh
 # www.leaskh.com, i@leaskh.com
+# Optimized by @yaleh
 # Based on chnroutes project (by Numb.Majority@gmail.com)
 
 import re
@@ -9,43 +10,152 @@ import argparse
 import math
 import ipaddress
 
+# tunable with primes for balancing of matching times and code size
+# increase it for better performance
+# decrease it for smaller size
+global HASH_BASE, MASK_STEP, min_prefixlen, max_prefixlen
+
+HASH_BASE = 1303
+MASK_STEP = 4
+
+min_prefixlen = 32
+max_prefixlen = 0
 
 def generate_pac(proxy):
+    # TODOs: fregment net, save prefix/24 to a 2D array with the 1st-D index of a mod-x key
+
     results  = merge_all(fetch_ip_data())
+
+    for net in results:
+        global min_prefixlen, max_prefixlen
+        i = net.prefixlen
+        if i < min_prefixlen:
+            min_prefixlen = i
+        if i > max_prefixlen:
+            max_prefixlen = i
+
+    print "PrefixLen: [%d, %d]" % (min_prefixlen, max_prefixlen)
+ 
+#    print "Hashing...\n"
+    hashed_results = hash_nets(fregment_nets(results), HASH_BASE)
+
     pacfile  = 'flora_pac.pac'
     rfile    = open(pacfile, 'w')
-    strLines = (
-        "// Flora_Pac by @leaskh"
-        "\n// www.leaskh.com, i@leaskh.com"
-        "\n"
-        "\nfunction FindProxyForURL(url, host) {"
-        "\n"
-        "\n    var list = ["
-        "\n        ['192.168.0.0', '255.255.0.0'],"
+    strLines = ("""
+// Flora_Pac by @leaskh
+// www.leaskh.com, i@leaskh.com
+// Optimized by @yaleh
+   
+function FindProxyForURL(url, host) {
+  var HASH_BASE, MASK_STEP, a, dot2num, hash_masked_ip, hashed_nets, i, lookup_ip, max_prefixlen, min_prefixlen, num2dot, rebuild_net, _i, _j, _len, _len1;
+
+  dot2num = function(dot) {
+    var d;
+    d = dot.split(".");
+    return ((((((+d[0]) * 256) + (+d[1])) * 256) + (+d[2])) * 256) + (+d[3]);
+  };
+
+  num2dot = function(ip) {
+    return [ip >>> 24, ip >>> 16 & 0xFF, ip >>> 8 & 0xFF, ip & 0xFF].join(".");
+  };
+
+  hash_masked_ip = function(ip, mask_len, mod_base) {
+    var i, net, offset, _i;
+    offset = 32 - mask_len;
+    net = ip >>> offset;
+    for (i = _i = 0; 0 <= offset ? _i < offset : _i > offset; i = 0 <= offset ? ++_i : --_i) {
+      net *= 2;
+    }
+    return net % mod_base;
+  };
+
+  rebuild_net = function(pair) {
+    var masks, result;
+    result = ['', ''];
+    masks = {
+      0: "0.0.0.0",
+      2: "192.0.0.0",
+      4: "240.0.0.0",
+      6: "252.0.0.0",
+      8: "255.0.0.0",
+      10: "255.192.0.0",
+      12: "255.240.0.0",
+      14: "255.252.0.0",
+      16: "255.255.0.0",
+      18: "255.255.192.0",
+      20: "255.255.240.0",
+      22: "255.255.252.0",
+      24: "255.255.255.0"
+    };
+    result[0] = num2dot(pair[0] << (32 - pair[1]));
+    result[1] = masks[pair[1]];
+    return result;
+  };
+
+  lookup_ip = function(ip) {
+    var i, k, len, n, n_ip, _i, _len, _ref;
+    len = min_prefixlen;
+    n_ip = dot2num(ip);
+    while (len <= max_prefixlen) {
+      k = hash_masked_ip(n_ip, len, HASH_BASE);
+      _ref = hashed_nets[k];
+      for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+        i = _ref[_i];
+        n = rebuild_net(i);
+        if (isInNet(ip,n[0],n[1])) {
+          return true;
+        }
+      }
+      len += MASK_STEP;
+    }
+    return false;
+  };
+"""
     )
+    strLines += """
+
+  HASH_BASE = %d;
+  MASK_STEP = %d;
+  min_prefixlen = %d;
+  max_prefixlen = %d;
+
+""" % (HASH_BASE, MASK_STEP, min_prefixlen, max_prefixlen)
+
     intLines = 0
-    for net in results:
-        if intLines > 0:
-            strLines = strLines + ','
-        intLines = intLines + 1
-        strLines = strLines + "\n        ['%s', '%s']"%(net.network_address,
-                                                        net.netmask)
+
+    strLines += (
+        "\n    var hashed_nets = ["
+    )
+    none_empty_count = 0
+    for i in range(len(hashed_results)):
+#        print "%d: %d" % (i, len(hashed_results[i]))
+        if len(hashed_results[i]) > 0:
+            none_empty_count += 1
+        strLines += "\n        ["
+        for net in hashed_results[i]:
+            strLines += "\n            [%d, %d]," % (int(net.network_address) >> (32 - net.prefixlen),
+                                                     net.prefixlen)
+        strLines += "\n        ],"
+    avg_len = float(len(results)) / none_empty_count
+    print "Avarage matching length: %f" % avg_len
+    steps = (max_prefixlen - min_prefixlen) / MASK_STEP + 1
+    print "Steps to match: %d" % steps
+    print "Matching cost est.: %f" % (avg_len * steps)
     strLines = strLines + (
         "\n    ];"
         "\n"
         "\n    if (isPlainHostName(host)"
         "\n     || (host == '127.0.0.1')"
         "\n     || (host == 'localhost')"
-        "\n     || (/\\b([0-9]{1,3})\.([0-9]{1,3})\.([0-9]{1,3})\.([0-9]{1,3})\\b/.test(host))) {"
+#        "\n     || (/\\b([0-9]{1,3})\.([0-9]{1,3})\.([0-9]{1,3})\.([0-9]{1,3})\\b/.test(host))) {"
+        "\n     ) {"
         "\n        return 'DIRECT';"
         "\n    }"
         "\n"
         "\n    var ip = dnsResolve(host);"
         "\n"
-        "\n    for (var i in list) {"
-        "\n        if (isInNet(ip, list[i][0], list[i][1])) {"
-        "\n            return 'DIRECT';"
-        "\n        }"
+        "\n    if (lookup_ip(ip)) {"
+        "\n        return 'DIRECT';"
         "\n    }"
         "\n"
         "\n    return '%s';"
@@ -59,7 +169,7 @@ def generate_pac(proxy):
            "Usage: Use the newly created %s as your web browser's automatic "
            "proxy configuration (.pac) file."%(intLines, pacfile))
 
-def merge_networks(net1, net2):
+def merge_nets(net1, net2):
     super_net1 = net1.supernet()
     super_net2 = net2.supernet()
 
@@ -76,7 +186,7 @@ def merge_all(networks):
         if i == 0:
             i += 1
             continue
-        merged_net = merge_networks(networks[i-1], networks[i])
+        merged_net = merge_nets(networks[i-1], networks[i])
         if merged_net is None:
             i += 1
             continue
@@ -86,6 +196,33 @@ def merge_all(networks):
             i -= 1
 
     return networks
+
+def fregment_net(net):
+    # return networks of mask 4, 8, 12, 16, 20, 24
+#    print "Fregment %s" % str(net)
+    subnets = []
+    target_prefixlen = (net.prefixlen - 1) / MASK_STEP * MASK_STEP + MASK_STEP
+    for a in net.subnets(target_prefixlen - net.prefixlen):
+        subnets.append(a)
+
+    return subnets
+
+def fregment_nets(nets):
+    results = []
+    for net in nets:
+        results += fregment_net(net)
+    return results
+
+def hash_address(address, mod_base):
+#    print "Hash %s" % str(address)
+    return int(address) % mod_base
+
+def hash_nets(nets, mod_base):
+    hashed = [[] for i in range(mod_base)]
+    for net in nets:
+        i = hash_address(net.network_address, mod_base)
+        hashed[i].append(net)
+    return hashed
 
 def fetch_ip_data():
     #fetch data from apnic
@@ -136,7 +273,20 @@ if __name__=='__main__':
                                "SOCKS 127.0.0.1:8964; "
                                "SOCKS5 127.0.0.1:8964; "
                                "PROXY 127.0.0.1:8964")
+    parser.add_argument('-m', '--mask-step',
+                        type = int,
+                        dest = 'mask_step',
+                        default = 4,
+                        help = "Step size of mask fregment (default: 4)")
+    parser.add_argument('-s', '--hash-base',
+                        type = int,
+                        dest = 'hash_base',
+                        default = 1303,
+                        help = 'Size of the address hash table (default: 1303)')
 
     args = parser.parse_args()
+#    global HASH_BASE, MASK_STEP
+    HASH_BASE = args.hash_base
+    MASK_STEP = args.mask_step
 
     generate_pac(args.proxy)
