@@ -65,8 +65,8 @@ To make the generate PAC file smaller, it can be minified/uglified like this:
 
 3. Add following DHCP options (if you want to get the proxy configuration from DHCP automatically)
 
-    option local-pac-server code 252 = text; 
-    option local-pac-server "http://YOUR_GAETWAY/wpad.dat"; 
+        option local-pac-server code 252 = text; 
+        option local-pac-server "http://YOUR_GAETWAY/wpad.dat"; 
 
 ## For Developers
 
