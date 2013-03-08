@@ -41,7 +41,8 @@ Tips
 * How to make SOCKS proxy setting compatible with most OSs and browsers?
 
   It's found that Chrome accepts only proxy string of "SOCKS5", iOS Safari accepts only "SOCKS", Mozilla accepts both. To make them work together, the proxy argument should look like this:
-```"SOCKS5 PROXY_IP:PROXY_PORT; SOCKS PROXY_IP:PROXY_PORT"
+
+``` "SOCKS5 PROXY_IP:PROXY_PORT; SOCKS PROXY_IP:PROXY_PORT"
 ```
 
   Notice: don't mass the order.
