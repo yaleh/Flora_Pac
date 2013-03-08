@@ -21,7 +21,53 @@ MASK_STEP = 4
 min_prefixlen = 32
 max_prefixlen = 0
 
-def generate_pac(proxy):
+def generate_balanced_proxy(proxies, balance):
+    if balance == 'no':
+        return "return '%s' ;" % (';'.join(proxies))
+    elif balance == 'local_ip':
+        return '''
+  var local_ip_balance = function(proxies) {
+    var i, k, l, myseg, s, _i;
+    myseg = parseInt(myIpAddress().split(".")[3]);
+    l = proxies.length;
+    k = myseg % l;
+    s = '';
+    for (i = _i = 0; 0 <= l ? _i < l : _i > l; i = 0 <= l ? ++_i : --_i) {
+      s += proxies[(k + i) % l];
+    }
+    return s;
+  };
+''' + """
+  return local_ip_balance([%s]);
+""" % (','.join(map(lambda p: "'%s'" % p, proxies)))
+    elif balance == 'host':
+        return '''
+  var target_host_balance = function(proxies, host) {
+    var hash_string, i, k, l, s, _i;
+    hash_string = function(s) {
+      var c, hash, _i, _len;
+      hash = 0;
+      for (_i = 0, _len = s.length; _i < _len; _i++) {
+        c = s[_i];
+        hash = (hash << 5) - hash + c.charCodeAt(0);
+        hash = hash & hash & 0xFFFF;
+        hash &= 0xFFFF;
+      }
+      return hash;
+    };
+    l = proxies.length;
+    k = hash_string(host) % l;
+    s = '';
+    for (i = _i = 0; 0 <= l ? _i < l : _i > l; i = 0 <= l ? ++_i : --_i) {
+      s += proxies[(k + i) % l];
+    }
+    return s;
+  };
+''' + """
+  return target_host_balance([%s], host);
+""" % (','.join(map(lambda p: "'%s'" % p, proxies)))
+
+def generate_pac(proxies, balance):
     # TODOs: fregment net, save prefix/24 to a 2D array with the 1st-D index of a mod-x key
 
     results  = merge_all(fetch_ip_data())
@@ -154,14 +200,14 @@ function FindProxyForURL(url, host) {
         "\n"
         "\n    var ip = dnsResolve(host);"
         "\n"
-        "\n    if (lookup_ip(ip)) {"
+        "\n    if (ip == null || ip == '' || lookup_ip(ip)) {"
         "\n        return 'DIRECT';"
         "\n    }"
         "\n"
-        "\n    return '%s';"
+        "\n    %s"
         "\n"
         "\n}"
-        "\n"%(proxy)
+        "\n" % generate_balanced_proxy(proxies, balance)
     )
     rfile.write(strLines)
     rfile.close()
@@ -267,26 +313,35 @@ if __name__=='__main__':
     parser=argparse.ArgumentParser(description="Generate proxy auto-config rules.")
     parser.add_argument('-x', '--proxy',
                         dest = 'proxy',
-                        default = 'SOCKS 127.0.0.1:8964',
-                        nargs = '?',
-                        help = "Proxy Server, examples: "
-                               "SOCKS 127.0.0.1:8964; "
-                               "SOCKS5 127.0.0.1:8964; "
-                               "PROXY 127.0.0.1:8964")
+                        default = ['SOCKS 127.0.0.1:8964'],
+                        nargs = '*',
+                        help = "Proxy Server, accepts multple values for balancing, i.e.: "
+                               "-x 'SOCKS 127.0.0.1:8964' 'SOCKS5 127.0.0.1:1984' 'PROXY 127.0.0.1:1989'")
     parser.add_argument('-m', '--mask-step',
                         type = int,
                         dest = 'mask_step',
                         default = 4,
-                        help = "Step size of mask fregment (default: 4)")
+                        help = "Step size of mask fregment (default: %(default)s)")
     parser.add_argument('-s', '--hash-base',
                         type = int,
                         dest = 'hash_base',
                         default = 1303,
-                        help = 'Size of the address hash table (default: 1303)')
+                        help = 'Size of the address hash table (default: %(default)s)')
+    parser.add_argument("-b", '--balance',
+                        choices=["no", "local_ip", "host"],
+                        dest = 'balance',
+                        default = "no",
+                        help = "Balancing policy: "
+                               "'no' for no balancing, "
+                               "'local_ip' for balancing by local IP, "
+                               "'host' for balancing by Web site's hostname "
+                               "(default: %(default)s)")
 
     args = parser.parse_args()
 #    global HASH_BASE, MASK_STEP
     HASH_BASE = args.hash_base
     MASK_STEP = args.mask_step
 
-    generate_pac(args.proxy)
+#    for p in args.proxy:
+#        print p
+    generate_pac(args.proxy, args.balance)

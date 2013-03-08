@@ -4,6 +4,34 @@ isInNet = (ipaddr, pattern, maskstr) ->
   mask = convert_addr(maskstr)
   (host & mask) is (pat & mask)
 
+myIpAddress = ->
+  "192.168.0.2"
+
+local_ip_balance = (proxies) ->
+  myseg = parseInt(myIpAddress().split(".")[3])
+  l = proxies.length
+  k = myseg % l
+  s = ''
+  s += proxies[(k+i) % l] for i in [0...l]
+  s
+  
+target_host_balance = (proxies, host) ->
+
+  hash_string = (s) ->
+    hash = 0
+    for c in s
+      hash = (hash << 5) - hash + c.charCodeAt(0)
+      hash = hash & hash & 0xFFFF
+      hash &= 0xFFFF
+    hash
+            
+  l = proxies.length
+  console.log hash_string(host)
+  k = hash_string(host) % l
+  s = ''
+  s += proxies[(k+i) % l] for i in [0...l]
+  s  
+
 convert_addr = (ipchars) ->
   bytes = ipchars.split(".")
   result = ((bytes[0] & 0xff) << 24) | ((bytes[1] & 0xff) << 16) | ((bytes[2] & 0xff) << 8) | (bytes[3] & 0xff)
@@ -95,3 +123,6 @@ for a in hashed_nets
 
 console.log lookup_ip "202.65.4.0"
 console.log lookup_ip "203.208.37.20"
+
+console.log local_ip_balance ['S0', 'S1', 'S2']
+console.log target_host_balance ['S0', 'S1', 'S2'], "google.com"
