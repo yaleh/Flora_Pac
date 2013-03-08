@@ -49,3 +49,8 @@ So, a real case of balancing with multiple SOCKS proxy looks like this
   
     ./flora_pac -b local_ip -x "SOCKS5 127.0.0.1:1984; SOCKS 127.0.0.1:1984" "SOCKS5 127.0.0.1:1989; SOCKS 127.0.0.1:1989"
 
+### Minify/uglify generated PAC file
+
+To make the generate PAC file smaller, it can be minified/uglified like this:
+
+    uglifyjs -m --lint -c -o flora_pac.min.pac flora_pac.pac
