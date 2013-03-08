@@ -38,7 +38,7 @@ Yale Huang's fork was optimized for both performance and size: it matches about 
 
 ## Tips
 
-### How to make SOCKS proxy setting compatible with most OSs and browsers?
+### How to make SOCKS proxy setting compatible with most OSs and browsers
 
 It's found that Chrome accepts only proxy string of "SOCKS5", iOS Safari accepts only "SOCKS", Mozilla accepts both. To make them work together, the proxy argument should look like this:
 
@@ -47,7 +47,7 @@ It's found that Chrome accepts only proxy string of "SOCKS5", iOS Safari accepts
 
 Notice: don't mass the order.
   
-So, a real case of balancing with multiple SOCKS proxy looks like this
+So, a real case of balancing with two SOCKS proxies looks like this
   
     ./flora_pac -b local_ip -x "SOCKS5 127.0.0.1:1984; SOCKS 127.0.0.1:1984" "SOCKS5 127.0.0.1:1989; SOCKS 127.0.0.1:1989"
 
