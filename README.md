@@ -6,6 +6,8 @@ by @leaskh and @yaleh (no, we are not cousins)
 A PAC(Proxy auto-config) file generator with fetched China IP range, which helps walk around
 GFW.
 
+Yale Huang's fork was optimized for both performance and size: it matches about 100 times faster than the original version, and the size can be shrinked to about 50KB with uglify, which can be deployed at lowend gateways (i.e. my OpenWRT router of about 8 years history with only 2MB storage) easier. 
+
 ## New Features
 
 * March 2013
