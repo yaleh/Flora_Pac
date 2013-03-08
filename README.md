@@ -56,3 +56,27 @@ So, a real case of balancing with two SOCKS proxies looks like this
 To make the generate PAC file smaller, it can be minified/uglified like this:
 
     uglifyjs -m --lint -c -o flora_pac.min.pac flora_pac.pac
+
+### A total solution with OpenWRT
+
+* AuthSSH for SOCKS proxy
+* Copy the geneated PAC file to /www/wpad.dat (yes, filename wpad.dat is MUST for compatibility)
+* Add following DHCP options (if you want to get the proxy configuration from DHCP automatically)
+
+    option local-pac-server code 252 = text; 
+    option local-pac-server "http://YOUR_GAETWAY/wpad.dat"; 
+
+## For Developers
+
+### Debugging generated PAC file
+
+pacparser(https://code.google.com/p/pacparser/) works.
+
+
+### Generate JS code with CoffeeScript
+
+Most JS code of the PAC file are generate with the CoffeeScript file hash_ip.coffee. Actually, I even implemented a test stub of isInNet, so the code can be test from command line like this:
+
+    coffee hash_ip
+
+BTW: JS shift ops really suck.
