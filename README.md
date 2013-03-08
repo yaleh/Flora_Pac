@@ -59,9 +59,11 @@ To make the generate PAC file smaller, it can be minified/uglified like this:
 
 ### A total solution with OpenWRT
 
-* AuthSSH for SOCKS proxy
-* Copy the geneated PAC file to /www/wpad.dat (yes, filename wpad.dat is MUST for compatibility)
-* Add following DHCP options (if you want to get the proxy configuration from DHCP automatically)
+1. AuthSSH for SOCKS proxy
+
+2. Copy the geneated PAC file to /www/wpad.dat (yes, filename wpad.dat is MUST for compatibility)
+
+3. Add following DHCP options (if you want to get the proxy configuration from DHCP automatically)
 
     option local-pac-server code 252 = text; 
     option local-pac-server "http://YOUR_GAETWAY/wpad.dat"; 
