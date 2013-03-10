@@ -15,8 +15,8 @@ import ipaddress
 # decrease it for smaller size
 global HASH_BASE, MASK_STEP, min_prefixlen, max_prefixlen
 
-HASH_BASE = 1303
-MASK_STEP = 4
+HASH_BASE = 3011
+MASK_STEP = 2
 
 min_prefixlen = 32
 max_prefixlen = 0
@@ -341,12 +341,12 @@ if __name__=='__main__':
     parser.add_argument('-m', '--mask-step',
                         type = int,
                         dest = 'mask_step',
-                        default = 4,
+                        default = 2,
                         help = "Step size of mask fregment (default: %(default)s)")
     parser.add_argument('-s', '--hash-base',
                         type = int,
                         dest = 'hash_base',
-                        default = 1303,
+                        default = 3011,
                         help = 'Size of the address hash table (default: %(default)s)')
     parser.add_argument("-b", '--balance',
                         choices=["no", "local_ip", "host"],
