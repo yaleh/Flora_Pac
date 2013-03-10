@@ -36,6 +36,14 @@ Yale Huang's fork was optimized for both performance and size: it matches about 
 
     ./flora_pac -b host -x "PROXY1_PROTOCOL PROXY1_IP:PROXY1_PORT" "PROXY2_PROTOCOL PROXY2_IP:PROXY2_PORT"
 
+### Avoid proxy for a subnet
+
+    ./flora_pac -x "PROXY_PROTOCOL PROXY_IP:PROXY_PORT" -n "NETWORK_ADDRESS/NETMASK"
+	
+### Avoid proxy for multiple subnets and specific hosts (no wildcard support for hosts yet)
+
+    ./flora_pac -x "PROXY_PROTOCOL PROXY_IP:PROXY_PORT" -n "NETWORK_ADDRESS1/NETMASK1" "NETWORK_ADDRESS2/NETMASK2" "HOST1" "HOST2"
+
 ## Tips
 
 ### How to make SOCKS proxy setting compatible with most OSs and browsers
