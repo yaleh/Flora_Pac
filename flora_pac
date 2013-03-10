@@ -184,19 +184,27 @@ function FindProxyForURL(url, host) {
 
     intLines = 0
 
-    strLines += (
-        "\n    var hashed_nets = ["
-    )
+    for i in xrange(min_prefixlen, max_prefixlen+1, MASK_STEP):
+        strLines +="""
+    var m%d = %d;
+""" % (i, i)
+
+    strLines += """
+    var empty_array = [];
+    var hashed_nets = [
+"""
     none_empty_count = 0
     for i in range(len(hashed_results)):
 #        print "%d: %d" % (i, len(hashed_results[i]))
         if len(hashed_results[i]) > 0:
             none_empty_count += 1
-        strLines += "\n        ["
-        for net in hashed_results[i]:
-            strLines += "\n            [%d, %d]," % (int(net.network_address) >> (32 - net.prefixlen),
-                                                     net.prefixlen)
-        strLines += "\n        ],"
+            strLines += "\n        ["
+            for net in hashed_results[i]:
+                strLines += "\n            [%d, m%d]," % (int(net.network_address) >> (32 - net.prefixlen),
+                                                         net.prefixlen)
+            strLines += "\n        ],"
+        else:
+            strLines += "\n        empty_array,"
     avg_len = float(len(results)) / none_empty_count
     print "Avarage matching length: %f" % avg_len
     steps = (max_prefixlen - min_prefixlen) / MASK_STEP + 1

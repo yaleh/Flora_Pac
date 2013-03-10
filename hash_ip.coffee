@@ -1,3 +1,6 @@
+#!/usr/bin/env coffee
+
+# Faked test stubs to simulate PAC running env
 isInNet = (ipaddr, pattern, maskstr) ->
   host = convert_addr(ipaddr)
   pat = convert_addr(pattern)
@@ -7,6 +10,14 @@ isInNet = (ipaddr, pattern, maskstr) ->
 myIpAddress = ->
   "192.168.0.2"
 
+HASH_BASE = 3
+MASK_STEP = 2
+
+min_prefixlen = 10
+max_prefixlen = 24
+
+### LOCAL_IP_BALANCE_BEGIN ###
+
 local_ip_balance = (proxies) ->
   myseg = parseInt(myIpAddress().split(".")[3])
   l = proxies.length
@@ -14,7 +25,11 @@ local_ip_balance = (proxies) ->
   s = ''
   s += proxies[(k+i) % l] for i in [0...l]
   s
-  
+
+### LOCAL_IP_BALANCE_END ###
+
+### TARGET_HOST_BALANCE_BEGIN ###
+
 target_host_balance = (proxies, host) ->
 
   hash_string = (s) ->
@@ -32,16 +47,15 @@ target_host_balance = (proxies, host) ->
   s += proxies[(k+i) % l] for i in [0...l]
   s  
 
+### TARGET_HOST_BALANCE_END ###
+
+### FLORA_BEGIN ###
+
 convert_addr = (ipchars) ->
   bytes = ipchars.split(".")
-  result = ((bytes[0] & 0xff) << 24) | ((bytes[1] & 0xff) << 16) | ((bytes[2] & 0xff) << 8) | (bytes[3] & 0xff)
+  result = ((bytes[0] & 0xff) << 24) | ((bytes[1] & 0xff) << 16) \
+  | ((bytes[2] & 0xff) << 8) | (bytes[3] & 0xff)
   result
-  
-HASH_BASE = 3
-MASK_STEP = 2
-
-min_prefixlen = 10
-max_prefixlen = 24
 
 dot2num = (dot) ->
   d = dot.split(".")
@@ -59,40 +73,16 @@ hash_masked_ip = (ip, mask_len, mod_base) ->
 #  console.log mod_base
   return net % mod_base
 
+prefixlen2mask = (prefixlen) ->
+  imask = 0xFFFFFFFF << (32 - prefixlen)
+  (imask >> 24 & 0xFF) + '.' + (imask >> 16 & 0xFF) + '.' + \
+  (imask >> 8 & 0xFF) + '.' + (imask & 0xFF)
+
 rebuild_net = (pair) ->
   result = ['', '']
-  masks = {
-    0: "0.0.0.0"
-    2: "192.0.0.0"
-  	4: "240.0.0.0"
-  	6: "252.0.0.0"
-  	8: "255.0.0.0"
-  	10: "255.192.0.0"
-  	12: "255.240.0.0"
-  	14: "255.252.0.0"
-  	16: "255.255.0.0"
-  	18: "255.255.192.0"
-  	20: "255.255.240.0"
-  	22: "255.255.252.0"
-  	24: "255.255.255.0"
-    }
   result[0] = num2dot pair[0] << (32 - pair[1])
-  result[1] = masks[pair[1]]
+  result[1] = prefixlen2mask(pair[1])
   return result
-
-hashed_nets = [
-        [
-            [13248647, 24],
-            [828605, 20],
-            [13305856, 24],
-        ],
-        [
-            [3313729, 22],
-        ],
-        [
-            [173367, 20],
-        ],
-      ]
 
 lookup_ip = (ip) ->
   len = min_prefixlen
@@ -108,6 +98,22 @@ lookup_ip = (ip) ->
 #      console.log n
     len += MASK_STEP
   false
+
+### FLORA_END ###
+
+hashed_nets = [
+        [
+            [13248647, 24],
+            [828605, 20],
+            [13305856, 24],
+        ],
+        [
+            [3313729, 22],
+        ],
+        [
+            [173367, 20],
+        ],
+      ]
 
 console.log dot2num("192.168.1.23")
 
