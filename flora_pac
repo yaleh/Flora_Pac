@@ -117,7 +117,7 @@ def generate_pac(proxies, balance, no_proxy):
 // Optimized by @yaleh
    
 function FindProxyForURL(url, host) {
-  var HASH_BASE, MASK_STEP, a, dot2num, hash_masked_ip, hashed_nets, i, lookup_ip, max_prefixlen, min_prefixlen, num2dot, rebuild_net, _i, _j, _len, _len1;
+  var HASH_BASE, MASK_STEP, a, dot2num, hash_masked_ip, hashed_nets, i, lookup_ip, max_prefixlen, min_prefixlen, num2dot, prefixlen2mask, rebuild_net, _i, _j, _len, _len1;
 
   dot2num = function(dot) {
     var d;
