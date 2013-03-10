@@ -67,7 +67,31 @@ def generate_balanced_proxy(proxies, balance):
   return target_host_balance([%s], host);
 """ % (','.join(map(lambda p: "'%s'" % p, proxies)))
 
-def generate_pac(proxies, balance):
+def generate_no_proxy(no_proxy):
+    s = ''
+    for n in no_proxy:
+        try:
+            # single IP address
+            ip = ipaddress.ip_address(u"%s" % n)
+            s += " ip == '%s' ||" % n
+            continue;
+        except ValueError:
+            pass
+        
+        try:
+            # network with mask or mask prefix 
+            net = ipaddress.ip_network(u"%s" % n)
+            s += " isInNet(ip, '%s', '%s') ||" % (net.network_address, net.netmask)
+            continue
+        except ValueError:
+            pass
+
+        # hostname
+        s += " host == '%s' ||" % n
+
+    return s
+
+def generate_pac(proxies, balance, no_proxy):
     # TODOs: fregment net, save prefix/24 to a 2D array with the 1st-D index of a mod-x key
 
     results  = merge_all(fetch_ip_data())
@@ -115,26 +139,17 @@ function FindProxyForURL(url, host) {
     return net % mod_base;
   };
 
+  prefixlen2mask = function(prefixlen) {
+    var imask;
+    imask = 0xFFFFFFFF << (32 - prefixlen);
+    return (imask >> 24 & 0xFF) + '.' + (imask >> 16 & 0xFF) + '.' + (imask >> 8 & 0xFF) + '.' + (imask & 0xFF);
+  };
+
   rebuild_net = function(pair) {
     var masks, result;
     result = ['', ''];
-    masks = {
-      0: "0.0.0.0",
-      2: "192.0.0.0",
-      4: "240.0.0.0",
-      6: "252.0.0.0",
-      8: "255.0.0.0",
-      10: "255.192.0.0",
-      12: "255.240.0.0",
-      14: "255.252.0.0",
-      16: "255.255.0.0",
-      18: "255.255.192.0",
-      20: "255.255.240.0",
-      22: "255.255.252.0",
-      24: "255.255.255.0"
-    };
     result[0] = num2dot(pair[0] << (32 - pair[1]));
-    result[1] = masks[pair[1]];
+    result[1] = prefixlen2mask(pair[1]);
     return result;
   };
 
@@ -187,28 +202,26 @@ function FindProxyForURL(url, host) {
     steps = (max_prefixlen - min_prefixlen) / MASK_STEP + 1
     print "Steps to match: %d" % steps
     print "Matching cost est.: %f" % (avg_len * steps)
-    strLines = strLines + (
-        "\n    ];"
-        "\n"
-        "\n    if (isPlainHostName(host)"
-        "\n     || (host == '127.0.0.1')"
-        "\n     || (host == 'localhost')"
-#        "\n     || (/\\b([0-9]{1,3})\.([0-9]{1,3})\.([0-9]{1,3})\.([0-9]{1,3})\\b/.test(host))) {"
-        "\n     ) {"
-        "\n        return 'DIRECT';"
-        "\n    }"
-        "\n"
-        "\n    var ip = dnsResolve(host);"
-        "\n"
-        "\n    if (ip == null || ip == '' || lookup_ip(ip)) {"
-        "\n        return 'DIRECT';"
-        "\n    }"
-        "\n"
-        "\n    %s"
-        "\n"
-        "\n}"
-        "\n" % generate_balanced_proxy(proxies, balance)
-    )
+    strLines = strLines + ("""
+    ];
+
+    if (isPlainHostName(host)
+     || (host == '127.0.0.1')
+     || (host == 'localhost')
+     ) {
+        return 'DIRECT';
+    }
+
+    var ip = dnsResolve(host);
+
+    if (ip == null || ip == '' || %s lookup_ip(ip)) {
+        return 'DIRECT';
+    }
+
+    %s
+
+}
+""" % (generate_no_proxy(no_proxy), generate_balanced_proxy(proxies, balance)))
     rfile.write(strLines)
     rfile.close()
     print ("Rules: %d items.\n"
@@ -336,6 +349,13 @@ if __name__=='__main__':
                                "'local_ip' for balancing by local IP, "
                                "'host' for balancing by Web site's hostname "
                                "(default: %(default)s)")
+    parser.add_argument('-n', '--no-proxy',
+                        dest = 'no_proxy',
+                        nargs = '*',
+                        default = ['192.168.0.0/24'],
+                        help = "Don't proxy request to the specified IP or network, i.e.: "
+                               "'192.168.0.0/24' '172.16.0.0/255.255.0.0 ' . "
+                               "(default: %(default)s)")
 
     args = parser.parse_args()
 #    global HASH_BASE, MASK_STEP
@@ -344,4 +364,4 @@ if __name__=='__main__':
 
 #    for p in args.proxy:
 #        print p
-    generate_pac(args.proxy, args.balance)
+    generate_pac(args.proxy, args.balance, args.no_proxy)
