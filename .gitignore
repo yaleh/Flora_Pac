@@ -1,0 +1,5 @@
+flora_pac.min.pac
+flora_pac.pac
+.venv/
+tests/__pycache__/
+__pycache__/

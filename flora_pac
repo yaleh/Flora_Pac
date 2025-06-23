@@ -5,7 +5,7 @@
 # Based on chnroutes project (by Numb.Majority@gmail.com)
 
 import re
-import urllib2
+import urllib3
 import argparse
 import math
 import ipaddress
@@ -104,7 +104,7 @@ def generate_pac(proxies, balance, no_proxy):
         if i > max_prefixlen:
             max_prefixlen = i
 
-    print "PrefixLen: [%d, %d]" % (min_prefixlen, max_prefixlen)
+    print("PrefixLen: [%d, %d]" % (min_prefixlen, max_prefixlen))
  
 #    print "Hashing...\n"
     hashed_results = hash_nets(fregment_nets(results), HASH_BASE)
@@ -184,7 +184,7 @@ function FindProxyForURL(url, host) {
 
     intLines = 0
 
-    for i in xrange(min_prefixlen, max_prefixlen+1, MASK_STEP):
+    for i in range(min_prefixlen, max_prefixlen+1, MASK_STEP):
         strLines +="""
     var m%d = %d;
 """ % (i, i)
@@ -206,10 +206,10 @@ function FindProxyForURL(url, host) {
         else:
             strLines += "\n        empty_array,"
     avg_len = float(len(results)) / none_empty_count
-    print "Avarage matching length: %f" % avg_len
+    print ("Avarage matching length: %f" % avg_len)
     steps = (max_prefixlen - min_prefixlen) / MASK_STEP + 1
-    print "Steps to match: %d" % steps
-    print "Matching cost est.: %f" % (avg_len * steps)
+    print ("Steps to match: %d" % steps)
+    print ("Matching cost est.: %f" % (avg_len * steps))
     strLines = strLines + ("""
     ];
 
@@ -268,8 +268,18 @@ def fregment_net(net):
     # return networks of mask 4, 8, 12, 16, 20, 24
 #    print "Fregment %s" % str(net)
     subnets = []
-    target_prefixlen = (net.prefixlen - 1) / MASK_STEP * MASK_STEP + MASK_STEP
-    for a in net.subnets(target_prefixlen - net.prefixlen):
+    # Calculate the target prefix length using integer division
+    # This finds the smallest multiple of MASK_STEP that is >= net.prefixlen
+    # target_prefixlen = (net.prefixlen - 1) / MASK_STEP * MASK_STEP + MASK_STEP # Original line
+    target_prefixlen = (net.prefixlen - 1) // MASK_STEP * MASK_STEP + MASK_STEP
+
+    # The argument to subnets should be the number of new subnets, which is 2**(prefixlen_diff)
+    # Or, it can be the new_prefix.
+    # The error suggests the internal calculation using prefixlen_diff is the issue.
+    # Let's pass the target_prefixlen directly as the new_prefix argument.
+    # The ipaddress.subnets method can take either the number of subnets or the new_prefix.
+    # Using the new_prefix is clearer here.
+    for a in net.subnets(new_prefix=target_prefixlen): # Pass target_prefixlen as new_prefix
         subnets.append(a)
 
     return subnets
@@ -293,9 +303,14 @@ def hash_nets(nets, mod_base):
 
 def fetch_ip_data():
     #fetch data from apnic
-    print "Fetching data from apnic.net, it might take a few minutes, please wait..."
+    print ("Fetching data from apnic.net, it might take a few minutes, please wait...")
     url=r'http://ftp.apnic.net/apnic/stats/apnic/delegated-apnic-latest'
-    data=urllib2.urlopen(url).read()
+    # data=urllib3.urlopen(url).read() # Original line
+
+    # Use PoolManager to make the request
+    http = urllib3.PoolManager()
+    response = http.request('GET', url)
+    data = response.data.decode('utf-8') # Decode the bytes to string
 
     cnregex=re.compile(r'apnic\|cn\|ipv4\|[0-9\.]+\|[0-9]+\|[0-9]+\|a.*',re.IGNORECASE)
     cndata=cnregex.findall(data)
