@@ -10,8 +10,15 @@ Yale Huang's fork was optimized for both performance and size: it matches about 
 
 ## New Features
 
+* **2025 - Modular Refactoring**
+  * Unified single entry point (`flora_pac`)
+  * Modular architecture with comprehensive test coverage
+  * Enhanced CLI with examples, version info, and better error handling
+  * Backward compatibility maintained
+  * Output file customization (`-o` option)
+
 * March 2013
-  * Optimized matching alrightm, which is much faster at iOS devices
+  * Optimized matching algorithm, which is much faster at iOS devices
   * Load balancing strategies (see Usage)
 
 ## Installation

@@ -8,10 +8,7 @@ import sys
 # Add parent directory to path to import flora_pac
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-import flora_pac
-generate_balanced_proxy = flora_pac.generate_balanced_proxy
-generate_no_proxy = flora_pac.generate_no_proxy
-generate_pac = flora_pac.generate_pac
+from flora_pac_lib.pac_generator import generate_balanced_proxy, generate_no_proxy, generate_pac
 
 
 class TestProxyBalancing:

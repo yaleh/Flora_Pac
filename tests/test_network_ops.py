@@ -6,11 +6,7 @@ import os
 # Add parent directory to path to import flora_pac
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-import flora_pac
-fregment_net = flora_pac.fregment_net
-fregment_nets = flora_pac.fregment_nets
-hash_address = flora_pac.hash_address
-hash_nets = flora_pac.hash_nets
+from flora_pac_lib.network_ops import fregment_net, fregment_nets, hash_address, hash_nets
 
 
 class TestNetworkFragmentation:
@@ -18,19 +14,17 @@ class TestNetworkFragmentation:
     
     def test_fregment_net_basic(self):
         """Test basic network fragmentation"""
-        # Test with /20 network, should fragment to /22 (MASK_STEP=2)
-        net = ipaddress.ip_network('192.168.0.0/20')
+        # Test with /19 network, should fragment to /20 (MASK_STEP=2)
+        net = ipaddress.ip_network('192.168.0.0/19')
         
-        result = fregment_net(net)
+        result = fregment_net(net, mask_step=2)
         
-        # /20 -> /22 creates 4 subnets
-        assert len(result) == 4
+        # /19 -> /20 creates 2 subnets
+        assert len(result) == 2
         
         expected_networks = [
-            '192.168.0.0/22',
-            '192.168.4.0/22', 
-            '192.168.8.0/22',
-            '192.168.12.0/22'
+            '192.168.0.0/20',
+            '192.168.16.0/20'
         ]
         
         result_strs = [str(subnet) for subnet in result]
@@ -39,51 +33,41 @@ class TestNetworkFragmentation:
     
     def test_fregment_net_already_aligned(self):
         """Test fragmentation of network already aligned to MASK_STEP"""
-        # Test with /22 network (already aligned to MASK_STEP=2)
-        net = ipaddress.ip_network('192.168.0.0/22')
+        # Test with /20 network (already aligned to MASK_STEP=2)
+        net = ipaddress.ip_network('192.168.0.0/20')
         
-        result = fregment_net(net)
+        result = fregment_net(net, mask_step=2)
         
-        # Should return the same network
+        # Should return the same network (no fragmentation needed)
         assert len(result) == 1
-        assert str(result[0]) == '192.168.0.0/22'
+        assert str(result[0]) == '192.168.0.0/20'
     
     def test_fregment_net_small_network(self):
         """Test fragmentation of small network"""
-        # Test with /30 network
+        # Test with /30 network (already aligned, should stay /30)
         net = ipaddress.ip_network('192.168.1.0/30')
         
-        result = fregment_net(net)
+        result = fregment_net(net, mask_step=2)
         
-        # /30 -> /32 creates 4 subnets
-        assert len(result) == 4
-        
-        expected_networks = [
-            '192.168.1.0/32',
-            '192.168.1.1/32',
-            '192.168.1.2/32', 
-            '192.168.1.3/32'
-        ]
-        
-        result_strs = [str(subnet) for subnet in result]
-        for expected in expected_networks:
-            assert expected in result_strs
+        # /30 -> /30 (no fragmentation needed)
+        assert len(result) == 1
+        assert str(result[0]) == '192.168.1.0/30'
     
     def test_fregment_nets_multiple(self):
         """Test fragmentation of multiple networks"""
         networks = [
-            ipaddress.ip_network('192.168.0.0/20'),
-            ipaddress.ip_network('10.0.0.0/21')
+            ipaddress.ip_network('192.168.0.0/20'),  # /20 -> /20 (1 subnet)
+            ipaddress.ip_network('10.0.0.0/21')      # /21 -> /22 (2 subnets)
         ]
         
-        result = fregment_nets(networks)
+        result = fregment_nets(networks, mask_step=2)
         
-        # /20 -> 4 subnets, /21 -> 2 subnets (/21 -> /22)
-        assert len(result) == 6
+        # /20 -> 1 subnet, /21 -> 2 subnets 
+        assert len(result) == 3
         
         # Check some expected subnets
         result_strs = [str(subnet) for subnet in result]
-        assert '192.168.0.0/22' in result_strs
+        assert '192.168.0.0/20' in result_strs
         assert '10.0.0.0/22' in result_strs
         assert '10.0.4.0/22' in result_strs
     

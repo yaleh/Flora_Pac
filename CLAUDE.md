@@ -10,10 +10,19 @@ Flora PAC is a Python-based PAC (Proxy Auto-Config) file generator that fetches 
 
 ## Architecture
 
-- **flora_pac** (Python script): Main generator that fetches APNIC data and creates PAC files
-- **hash_ip.coffee**: CoffeeScript test/development file with PAC logic prototypes
+### Modular Structure (Refactored)
+- **flora_pac**: Main executable script (single entry point)
+- **flora_pac_lib/**: Core package containing modular components
+  - **ip_data.py**: IP data fetching and network merging logic
+  - **network_ops.py**: Network fragmentation and hashing operations
+  - **pac_generator.py**: PAC file generation and JavaScript templating
+- **tests/**: Comprehensive test suite for all components
+- **flora_pac_legacy.py**: Original monolithic implementation (archived)
+
+### Generated Files
 - **flora_pac.pac**: Generated JavaScript PAC file for browsers
 - **flora_pac.min.pac**: Minified version of the PAC file
+- **hash_ip.coffee**: CoffeeScript test/development file with PAC logic prototypes
 
 ### Core Algorithm
 1. Fetches IP ranges from APNIC for Chinese networks
@@ -24,6 +33,7 @@ Flora PAC is a Python-based PAC (Proxy Auto-Config) file generator that fetches 
 ## Common Commands
 
 ### Generate PAC file
+
 ```bash
 # Basic usage with single proxy
 ./flora_pac -x "SOCKS5 127.0.0.1:1984"
@@ -31,8 +41,17 @@ Flora PAC is a Python-based PAC (Proxy Auto-Config) file generator that fetches 
 # Multiple proxies with load balancing
 ./flora_pac -b local_ip -x "SOCKS5 127.0.0.1:1984" "SOCKS5 127.0.0.1:1989"
 
-# With no-proxy networks
-./flora_pac -x "SOCKS5 127.0.0.1:1984" -n "192.168.0.0/24" "10.0.0.0/8"
+# With no-proxy networks and custom output
+./flora_pac -x "SOCKS5 127.0.0.1:1984" -n "192.168.0.0/24" "10.0.0.0/8" -o custom.pac
+
+# Advanced configuration with performance tuning
+./flora_pac -x "SOCKS5 127.0.0.1:1984" -s 5003 -m 1 -o optimized.pac
+
+# Host-based proxy balancing
+./flora_pac -b host -x "SOCKS5 127.0.0.1:1984" "SOCKS5 127.0.0.1:1989"
+
+# Display help and examples
+./flora_pac --help
 ```
 
 ### Performance tuning
@@ -42,6 +61,9 @@ Flora PAC is a Python-based PAC (Proxy Auto-Config) file generator that fetches 
 
 # Adjust mask step (smaller = more precise, slower)
 ./flora_pac -m 1 -x "SOCKS5 127.0.0.1:1984"
+
+# Combined optimization
+./flora_pac -s 7001 -m 1 -x "SOCKS5 127.0.0.1:1984" -o optimized.pac
 ```
 
 ### Minify generated PAC
@@ -90,14 +112,31 @@ make install-deps
 ```
 
 ### Test structure
+#### Legacy Tests (Updated for Modular Components)
 - `tests/test_ip_data.py`: Tests for IP data fetching and network merging
 - `tests/test_network_ops.py`: Tests for network fragmentation and hashing algorithms  
 - `tests/test_pac_generation.py`: Tests for PAC file generation and proxy balancing
 - `tests/test_integration.py`: End-to-end integration tests
 
+#### Modular Component Tests
+- `tests/test_modular_ip_data.py`: Enhanced tests for ip_data module
+- `tests/test_modular_network_ops.py`: Enhanced tests for network_ops module
+- `tests/test_modular_pac_generator.py`: Enhanced tests for pac_generator module
+- `tests/test_integration_modular.py`: Integration tests for modular architecture
+
 ## Development Notes
 
+### Modular Architecture Benefits
+- **Single Entry Point**: One unified `flora_pac` script with all features
+- **Separation of Concerns**: Each module handles a specific aspect (IP data, network ops, PAC generation)
+- **Testability**: Individual components can be tested in isolation with comprehensive test coverage
+- **Maintainability**: Code is easier to understand, modify, and extend
+- **Reusability**: Modules can be imported and used independently in other projects
+- **Enhanced CLI**: Improved help, examples, version info, and error handling
+
+### Implementation Details
 - The hash_ip.coffee file contains test stubs and can be run standalone for development
 - PAC file generation involves network merging optimization to reduce file size
 - IP lookup uses multi-step hashing for O(1) average case performance
 - Generated PAC files include embedded JavaScript for IP range matching
+- Modular components use type hints and comprehensive documentation

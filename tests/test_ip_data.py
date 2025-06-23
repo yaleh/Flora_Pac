@@ -8,11 +8,8 @@ import os
 # Add parent directory to path to import flora_pac
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-# Import from flora_pac script
-import flora_pac
-fetch_ip_data = flora_pac.fetch_ip_data
-merge_nets = flora_pac.merge_nets
-merge_all = flora_pac.merge_all
+# Import from flora_pac_lib
+from flora_pac_lib.ip_data import fetch_ip_data, merge_nets, merge_all
 
 
 class TestFetchIPData:
