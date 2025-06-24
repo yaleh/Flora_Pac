@@ -90,11 +90,60 @@ For maximum compatibility across browsers and OSes, use combined SOCKS format:
 ./flora_pac -x "SOCKS5 127.0.0.1:1984; SOCKS 127.0.0.1:1984"
 ```
 
+## Package Management
+
+This project uses Poetry for dependency management and packaging.
+
+### Installation and Setup
+```bash
+# Install Poetry (if not already installed)
+curl -sSL https://install.python-poetry.org | python3 -
+
+# Install project dependencies
+poetry install
+
+# Install with test dependencies
+poetry install --with test
+
+# Activate virtual environment 
+poetry shell
+
+# Run commands in Poetry environment
+poetry run flora-pac --help
+```
+
+### Poetry Commands
+```bash
+# Check configuration
+poetry check
+
+# Show installed packages
+poetry show
+
+# Add new dependency
+poetry add <package-name>
+
+# Add test dependency
+poetry add --group test <package-name>
+
+# Update dependencies
+poetry update
+
+# Build package
+poetry build
+
+# Publish package (when ready)
+poetry publish
+```
+
 ## Testing
 
 ### Run tests
 ```bash
-# Using pytest directly
+# Using Poetry (recommended)
+poetry run pytest
+
+# Using pytest directly (in activated environment)
 python3 -m pytest
 
 # Using test runner script
@@ -105,7 +154,10 @@ make test
 make test-verbose
 make test-coverage
 
-# Install test dependencies
+# Install test dependencies (Poetry method)
+poetry install --with test
+
+# Legacy method
 make install-deps
 # or
 ./test_runner.py --install-deps

@@ -1,0 +1,46 @@
+[project]
+name = "flora-pac"
+version = "1.0.0"
+description = "Python-based PAC file generator for China IP ranges"
+authors = [{name = "Yale Huang", email = "yale@example.com"}]
+readme = "README.md"
+requires-python = ">=3.8"
+dependencies = []
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+]
+
+[project.optional-dependencies]
+test = [
+    "pytest>=7.0.0",
+    "pytest-mock>=3.6.1",
+    "responses>=0.20.0",
+    "urllib3>=1.26.0",
+]
+
+[project.scripts]
+flora-pac = "flora_pac:main"
+
+[tool.poetry]
+packages = [{include = "flora_pac_lib"}]
+
+[tool.poetry.dependencies]
+python = "^3.8"
+
+[tool.poetry.group.test.dependencies]
+pytest = "^7.0.0"
+pytest-mock = "^3.6.1" 
+responses = "^0.20.0"
+urllib3 = "^1.26.0"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
