@@ -3,3 +3,7 @@ flora_pac.pac
 .venv/
 tests/__pycache__/
 __pycache__/
+*.log
+dist/
+logs/
+test.pac

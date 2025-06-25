@@ -11,12 +11,14 @@ Flora PAC is a Python-based PAC (Proxy Auto-Config) file generator that fetches 
 ## Architecture
 
 ### Modular Structure (Refactored)
-- **flora_pac**: Main executable script (single entry point)
+- **flora_pac**: Main CLI executable script (single entry point)
+- **flora_pac_web.py**: Web interface entry point (Gradio-based)
 - **flora_pac_lib/**: Core package containing modular components
   - **ip_data.py**: IP data fetching and network merging logic
   - **network_ops.py**: Network fragmentation and hashing operations
   - **pac_generator.py**: PAC file generation and JavaScript templating
-- **tests/**: Comprehensive test suite for all components
+  - **web_ui.py**: Gradio web interface module
+- **tests/**: Comprehensive test suite for all components including Web UI
 - **flora_pac_legacy.py**: Original monolithic implementation (archived)
 
 ### Generated Files
@@ -31,6 +33,25 @@ Flora PAC is a Python-based PAC (Proxy Auto-Config) file generator that fetches 
 4. Generates JavaScript PAC file with embedded hash tables and lookup functions
 
 ## Common Commands
+
+### Web UI Interface
+
+```bash
+# Launch web interface (recommended for beginners)
+./flora_pac_web.py
+
+# Launch on custom port
+./flora_pac_web.py --port 8080
+
+# Allow external access
+./flora_pac_web.py --host 0.0.0.0 --port 7860
+
+# Create public share link
+./flora_pac_web.py --share
+
+# Using Poetry
+poetry run flora-pac-web
+```
 
 ### Generate PAC file
 
@@ -175,16 +196,18 @@ make install-deps
 - `tests/test_modular_network_ops.py`: Enhanced tests for network_ops module
 - `tests/test_modular_pac_generator.py`: Enhanced tests for pac_generator module
 - `tests/test_integration_modular.py`: Integration tests for modular architecture
+- `tests/test_web_ui.py`: Comprehensive tests for Web UI module
 
 ## Development Notes
 
 ### Modular Architecture Benefits
-- **Single Entry Point**: One unified `flora_pac` script with all features
-- **Separation of Concerns**: Each module handles a specific aspect (IP data, network ops, PAC generation)
+- **Dual Interface**: CLI (`flora_pac`) and Web UI (`flora_pac_web.py`) entry points
+- **Separation of Concerns**: Each module handles a specific aspect (IP data, network ops, PAC generation, Web UI)
 - **Testability**: Individual components can be tested in isolation with comprehensive test coverage
 - **Maintainability**: Code is easier to understand, modify, and extend
 - **Reusability**: Modules can be imported and used independently in other projects
 - **Enhanced CLI**: Improved help, examples, version info, and error handling
+- **User-Friendly Web Interface**: Gradio-based GUI for non-technical users
 
 ### Implementation Details
 - The hash_ip.coffee file contains test stubs and can be run standalone for development
