@@ -97,6 +97,15 @@ uglifyjs -m --lint -c -o flora_pac.min.pac flora_pac.pac
 coffee hash_ip.coffee
 ```
 
+### Browser Testing with xvfb (for headless environments)
+```bash
+# Start browser with remote debugging in virtual display (for CI/testing)
+xvfb-run -a -s "-screen 0 1024x768x24" chromium-browser --remote-debugging-port=9222 --no-first-run --no-default-browser-check http://localhost:7861
+
+# Then use MCP puppeteer tools to interact with the browser
+# This is useful for automated testing and screenshot capture
+```
+
 ## Key Parameters
 
 - **HASH_BASE**: Hash table size (default 3011) - tune for performance vs size
