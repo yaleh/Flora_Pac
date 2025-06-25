@@ -137,6 +137,7 @@ class FloraPacWebUI:
                     proxy_input = gr.Textbox(
                         label="Proxy Servers (one per line)",
                         placeholder="SOCKS5 127.0.0.1:1984\nSOCKS5 127.0.0.1:1989",
+                        value="SOCKS5 127.0.0.1:1984",
                         lines=4,
                         info="Enter proxy servers, one per line. Example: SOCKS5 127.0.0.1:1984"
                     )
